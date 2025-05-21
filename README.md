@@ -1,2 +1,3 @@
 # DataStructure
-Code file, project report, presentation file, and algorithm illustration using HTML
+File nộp bao gồm:<br>
+- Code PDFS Online trên lưới<br>
