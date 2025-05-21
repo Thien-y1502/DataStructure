@@ -1,0 +1,74 @@
+Đọc dữ liệu đầu vào:
+    - n, m, E: kích thước lưới, năng lượng tối đa
+    - a[][]: ma trận lưới
+    - sx, sy: vị trí xuất phát (a[i][j] == 2)
+
+Kiểm tra điều kiện năng lượng:
+    Điều kiện là E >= bán kính môi trường khám phá 
+        Với tâm là vị trí xuất phát của robot
+   
+    Nêu E < bán kính môi trường khám phá 
+        Thông báo "Năng lượng không đủ để tìm đường đi!"
+        Kết thúc chương trình
+
+    ( Ta sẽ xét các trường hợp E >= 4 * max(n, m))
+
+Khởi tạo các biến khác:
+    - d[][]: ma trận lưu khoảng cách từ xuất phát
+    - vis[][]: đánh dấu đã thăm
+    - path[]: lưu các route (mỗi route là vector Step)
+    - stL, stU, stR, stD: 4 stack cho 4 hướng
+
+Bắt đầu:
+    - Đưa vị trí xuất phát vào stL
+    - Gọi hàm run()
+
+Hàm run():
+    Lặp cho đến khi các stack đều rỗng:
+        - Ưu tiên lấy từ stL, sau đó stU, stR, stD
+        - Nếu ô lấy ra chưa thăm, gọi go(x, y)
+
+Hàm go(x, y):
+    - Thêm bước hiện tại vào path[cnt]
+    - Nếu đang bắt đầu route mới (newRoute == false):
+        - Đặt lại năng lượng curE = d[x][y]
+        - Đánh dấu bắt đầu route mới (newRoute = true)
+        - Lưu lại route vừa đi (save(x, y))
+    - Ngược lại:
+        - Tính năng lượng bước stepE
+        - Nếu không phải ô xuất phát:
+            - Nếu curE + stepE + d[x][y] == E:
+                - Cộng năng lượng, thêm bước vào path[cnt]
+                - Đánh dấu kết thúc route, tăng cnt
+                - newRoute = false
+            - Nếu curE + stepE + d[x][y] > E:
+                - Kết thúc route, tăng cnt
+                - Lưu lại route (save(x, y))
+                - Đặt lại năng lượng curE = d[x][y]
+            - Ngược lại:
+                - Cộng năng lượng, thêm bước vào path[cnt]
+    - Đánh dấu đã thăm vis[x][y] = 1
+    - Với mỗi hướng k (trái, lên, phải, xuống):
+        - Nếu ô mới hợp lệ và chưa thăm:
+            - Đẩy vào stack tương ứng
+            - Gọi upd(x, y, nx, ny)
+    - Cập nhật px, py = x, y
+    - Gọi lại run()
+
+Hàm upd(x, y, nx, ny):
+    - Nếu d[nx][ny] == 0 và d[x][y] + 1 <= E/2:
+        - Cập nhật d[nx][ny] = d[x][y] + 1
+        - Lưu cha par[nx][ny] = (x, y)
+    - Nếu d[nx][ny] > d[x][y] + 1:
+        - Cập nhật d[nx][ny] = d[x][y] + 1
+        - Lưu cha par[nx][ny] = (x, y)
+    - Nếu d[nx][ny] == d[x][y] + 1:
+        - Lưu cha par[nx][ny] = (x, y)
+
+Hàm save(x, y):
+    - Xóa path[cnt]
+    - Lần ngược từ (x, y) về (sx, sy) theo par, lưu vào path[cnt]
+    - Đảo ngược path[cnt] để đúng thứ tự
+
+In kết quả:
+    - Với mỗi route trong path[], in ra các bước (x, y, d, e)
