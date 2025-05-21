@@ -6,8 +6,9 @@ File nộp bao gồm:<br>
     - Các testcase và mã giả, kèm theo file excel mô tả thời gian chạy<br>
 <br>
 - Code PDFS Offline trên cây<br>
-    - File PDFS offline Auto là file html mô ta trwucj quan quá trình duyệt, chia tuyến trong cây[TẢI VỀ RỒI CHẠY, FILE ĐÃ ĐƯỢC ĐÓNG GÓI]<br>
-    - File PDFSFull2 code c++ cho duyệt trên cây<br>
-    - File PDFSFull1 code C++ nhưng thể hiện rõ từng bước duyệt DFS, từng bước kết quả chia tuyến [ĐÃ ĐƯỢC THỂ HIỆN  RÕ HƠN Ở FILE HTML]<br>
+     - File PDFS offline Auto là file html mô ta trwucj quan quá trình duyệt, chia tuyến trong cây[TẢI VỀ RỒI CHẠY, FILE ĐÃ ĐƯỢC ĐÓNG GÓI]<br>
+     - File PDFSFull2 code c++ cho duyệt trên cây<br>
+     - File PDFSFull1 code C++ nhưng thể hiện rõ từng bước duyệt DFS, từng bước kết quả chia tuyến [ĐÃ ĐƯỢC THỂ HIỆN  RÕ HƠN Ở FILE HTML]<br>
 <br>
+    
     
