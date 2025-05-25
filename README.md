@@ -19,7 +19,11 @@
     - The `PDFSFull1` file details the step-by-step PDFS offline traversal  
     - The `PDFS offline auto.html` file visually represents the traversal and path splitting  
       **Note: To run the HTML file, please download it first and open it locally in your browser.**  
-    - The `TestCase` file contains test cases for `PDFSFull2` and the HTML file  
+    - The `TestCase` file contains test cases for `PDFSFull2` and the HTML file
+    - Additionally, the file testCase.txt can be used to provide input data for testing the PDFSmr algorithm.
  
-- **Report file** (.docx)  
-- **Summary file** (.docx)
+- **Report file** (.pdf)
+- LaTeX code on Overleaf (read-only access), zip file.
+    - Open Overleaf and log in "https://www.overleaf.com"
+    - Click on "New Project", then select "Upload Project"
+    - Then upload the ZIP file
