@@ -20,7 +20,6 @@
     - The `PDFS offline auto.html` file visually represents the traversal and path splitting  
       **Note: To run the HTML file, please download it first and open it locally in your browser.**  
     - The `TestCase` file contains test cases for `PDFSFull2` and the HTML file  
-
-- **Presentation file** (.ppt)  
+ 
 - **Report file** (.docx)  
 - **Summary file** (.docx)
