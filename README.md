@@ -21,6 +21,7 @@
       **Note: To run the HTML file, please download it first and open it locally in your browser.**  
     - The `TestCase` file contains test cases for `PDFSFull2` and the HTML file
     - Additionally, the file testCase.txt can be used to provide input data for testing the PDFSmr algorithm.
+    - The PDFS_MR1Tree C++ code is located in the PDFS OFFLINE folder, while the separate html folder is used for visual illustration and presentation purposes
  
 - **Report file** (.pdf)
 - LaTeX code on Overleaf (read-only access), zip file.
