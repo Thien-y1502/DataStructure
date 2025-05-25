@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mô phỏng Thuật toán PDFS</title>
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 15px;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+        .main-container {
+            display: flex;
+            width: 98%;
+            max-width: 1200px;
+            gap: 15px;
+            margin: 0 auto;
+        }
+        .tree-container {
+            flex: 1;
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            min-width: 300px;
+        }
+        .simulation-container {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .control-panel {
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .output-panel {
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+        #graph-visualization {
+            width: 100%;
+            height: 400px;
+            border: 1px solid #ced4da;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+        h2, h3 {
+            color: #007bff;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 8px;
+            margin-top: 0;
+        }
+        .controls {
+            margin: 10px 0;
+        }
+        .controls button {
+            padding: 8px 12px;
+            margin-right: 5px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.2s ease;
+        }
+        .controls button:hover {
+            background-color: #0056b3;
+        }
+        .controls button:disabled {
+            background-color: #adb5bd;
+            cursor: not-allowed;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        input[type="number"], textarea {
+            width: calc(100% - 20px);
+            padding: 8px 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        textarea {
+            min-height: 80px;
+        }
+        pre {
+            background-color: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 0.9em;
+            margin: 0;
+        }
+        .completed-route {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 8px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+        }
+        .step-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 0.9em;
+        }
+        .step-table th, .step-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .step-table th {
+            background-color: #f2f2f2;
+            position: sticky;
+            top: 0;
+        }
+        .step-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .step-table tr:hover {
+            background-color: #f1f1f1;
+        }
+        .step-container {
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 15px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="tree-container">
+            <h2>Cây duyệt</h2>
+            <div id="graph-visualization"></div>
+        </div>
+        
+        <div class="simulation-container">
+            <div class="control-panel">
+                <h2>Điều khiển mô phỏng</h2>
+                <div class="input-group">
+                    <label for="nodes-input">Số nút (n):</label>
+                    <input type="number" id="nodes-input" value="5">
+                    
+                    <label for="battery-input">Pin (B):</label>
+                    <input type="number" step="0.1" id="battery-input" value="20">
+                    
+                    <label for="edges-input">Danh sách cạnh (from to weight; mỗi dòng một cạnh):</label>
+                    <textarea id="edges-input" rows="4">0 1 3
+0 2 4
+1 3 5
+2 4 6</textarea>
+                </div>
+                
+                <div class="controls">
+                    <button id="initBtn">Khởi tạo & Mô phỏng</button>
+                    <button id="pauseBtn">Tạm dừng</button>
+                    <button id="resetBtn">Reset</button>
+                </div>
+            </div>
+            
+            <div class="output-panel">
+                <h2>Kết quả mô phỏng</h2>
+                
+                <div class="output-section">
+                    <h3>Chi tiết từng bước:</h3>
+                    <div class="step-container">
+                        <table class="step-table">
+                            <thead>
+                                <tr>
+                                    <th>Bước</th>
+                                    <th>Hành động</th>
+                                    <th>Nút hiện tại</th>
+                                    <th>Năng lượng tiêu thụ</th>
+                                    <th>Năng lượng dư</th>
+                                    <th>Tuyến đường hiện tại</th>
+                                </tr>
+                            </thead>
+                            <tbody id="step-by-step-table">
+                                <!-- Nội dung bảng sẽ được thêm bằng JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="output-section">
+                    <h3>Thứ tự duyệt DFS:</h3>
+                    <pre id="dfs-output-text">Chưa có dữ liệu</pre>
+                </div>
+                
+                <div class="output-section">
+                    <h3>Thông tin các tuyến đường:</h3>
+                    <div id="routes-output-container"></div>
+                </div>
+                
+                <div class="output-section">
+                    <h3>Trạng thái hiện tại:</h3>
+                    <pre id="current-metrics-text">Chưa có dữ liệu</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let network = null;
+        let nodesDataSet = new vis.DataSet();
+        let edgesDataSet = new vis.DataSet();
+
+        const ANIMATION_DELAY_MS = 700;
+        const COMPLETED_ROUTE_COLOR = "#28a745";
+        const COMPLETED_NODE_COLOR = "#d4edda";
+
+        // DOM Elements
+        const initBtn = document.getElementById('initBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const nodesInputEl = document.getElementById('nodes-input');
+        const batteryInputEl = document.getElementById('battery-input');
+        const edgesInputEl = document.getElementById('edges-input');
+        const dfsOutputTextEl = document.getElementById('dfs-output-text');
+        const routesOutputContainerEl = document.getElementById('routes-output-container');
+        const currentMetricsTextEl = document.getElementById('current-metrics-text');
+        const graphContainerEl = document.getElementById('graph-visualization');
+        const stepByStepTableEl = document.getElementById('step-by-step-table');
+
+        // Simulation State Variables
+        let B_val_js;
+        let graphNodesJS = {}; 
+        let js_path_stack = []; 
+        let js_current_route_nodes = []; 
+        let js_routes_list = []; 
+        let js_current_path_length = 0.0;
+        let js_current_route_energy = 0.0;
+        let js_carried_surplus = 0.0;
+        let js_full_dfs_trace = [];
+        let simulationInProgress = false;
+        let simulationPaused = false;
+        let resumeSimulation = null;
+        let stepCounter = 0;
+        
+        async function visualDelay(ms) {
+            if (!simulationInProgress) throw new Error("Simulation stopped.");
+            if (simulationPaused) {
+                await new Promise(resolve => {
+                    resumeSimulation = resolve;
+                });
+            }
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function addStepToTable(action, currentNode, energyConsumed, surplus, currentRoute) {
+            stepCounter++;
+            const row = document.createElement('tr');
+            
+            row.innerHTML = `
+                <td>${stepCounter}</td>
+                <td>${action}</td>
+                <td>${currentNode}</td>
+                <td>${energyConsumed.toFixed(2)}</td>
+                <td>${surplus.toFixed(2)}</td>
+                <td>${currentRoute}</td>
+            `;
+            
+            stepByStepTableEl.appendChild(row);
+            // Tự động cuộn đến hàng mới nhất
+            row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function updateCurrentMetricsDisplay() {
+            currentMetricsTextEl.textContent = 
+                `Current Path Length (from root): ${js_current_path_length.toFixed(2)}\n` +
+                `Current Route Energy: ${js_current_route_energy.toFixed(2)}\n` +
+                `Carried Surplus: ${js_carried_surplus.toFixed(2)}\n` +
+                `Current DFS Path Stack (IDs): ${js_path_stack.map(p => p.node.id).join(' -> ')}\n` +
+                `Current Route Nodes: ${js_current_route_nodes.join(' - ')}`;
+        }
+        
+        function updateDfsDisplay() {
+            dfsOutputTextEl.textContent = js_full_dfs_trace.join(" ");
+        }
+
+        function updateResultsDisplay() {
+            updateDfsDisplay();
+            
+            routesOutputContainerEl.innerHTML = '';
+            js_routes_list.forEach((route, index) => {
+                const routeEl = document.createElement('div');
+                routeEl.className = 'completed-route';
+                routeEl.innerHTML = `
+                    <strong>Route ${index + 1}</strong> 
+                    (cost = ${route.cost.toFixed(2)}, surplus = ${route.surplus.toFixed(2)}): 
+                    ${route.pathNodesString}
+                `;
+                routesOutputContainerEl.appendChild(routeEl);
+            });
+            
+            if (js_routes_list.length === 0) {
+                routesOutputContainerEl.innerHTML = '<p>Chưa có tuyến đường nào hoàn thành.</p>';
+            }
+        }
+
+        async function highlightNode(nodeId, color, duration = ANIMATION_DELAY_MS / 2) {
+            if (!simulationInProgress) return;
+            nodesDataSet.update({ id: nodeId, color: { background: color, border: 'black' } });
+            await visualDelay(duration);
+        }
+
+        async function highlightEdge(fromNodeId, toNodeId, weight, color, duration = ANIMATION_DELAY_MS) {
+            if (!simulationInProgress) return;
+            const edgeId = `edge-${fromNodeId}-${toNodeId}`; 
+            const existingEdge = edgesDataSet.get(edgeId);
+            if (existingEdge) {
+                edgesDataSet.update({ 
+                    id: edgeId, 
+                    color: { color: color }, 
+                    width: 3, 
+                    font: {size: 16, color: color, strokeWidth:1, strokeColor: 'white'} 
+                });
+            } else { 
+                const reverseEdgeId = `edge-${toNodeId}-${fromNodeId}`;
+                const existingReverseEdge = edgesDataSet.get(reverseEdgeId);
+                if(existingReverseEdge) {
+                    edgesDataSet.update({ 
+                        id: reverseEdgeId, 
+                        color: { color: color }, 
+                        width: 3, 
+                        font: {size: 16, color: color, strokeWidth:1, strokeColor: 'white'} 
+                    });
+                }
+            }
+            await visualDelay(duration);
+        }
+        
+        function resetHighlights() {
+            const allNodeIds = nodesDataSet.getIds();
+            const nodeUpdates = allNodeIds.map(id => ({ 
+                id: id, 
+                color: { background: '#97C2FC', border: '#2B7CE9' } 
+            }));
+            if (nodeUpdates.length > 0) nodesDataSet.update(nodeUpdates);
+
+            const allEdgeIds = edgesDataSet.getIds();
+            const edgeUpdates = allEdgeIds.map(id => ({ 
+                id: id, 
+                color: { color: '#2B7CE9' }, 
+                width: 2, 
+                font: {size:12, color: '#333'} 
+            }));
+            if (edgeUpdates.length > 0) edgesDataSet.update(edgeUpdates);
+        }
+
+        function markRouteAsCompleted(route) {
+            // Đánh dấu các nút đã hoàn thành
+            route.pathNodesArray.forEach(nodeId => {
+                nodesDataSet.update({
+                    id: nodeId,
+                    color: { background: COMPLETED_NODE_COLOR, border: COMPLETED_ROUTE_COLOR }
+                });
+            });
+            
+            // Đánh dấu các cạnh đã hoàn thành
+            for (let i = 0; i < route.pathNodesArray.length - 1; i++) {
+                const from = route.pathNodesArray[i];
+                const to = route.pathNodesArray[i+1];
+                
+                const edgeId = `edge-${from}-${to}`;
+                const existingEdge = edgesDataSet.get(edgeId);
+                
+                if (existingEdge) {
+                    edgesDataSet.update({
+                        id: edgeId,
+                        color: { color: COMPLETED_ROUTE_COLOR },
+                        width: 3
+                    });
+                } else {
+                    const reverseEdgeId = `edge-${to}-${from}`;
+                    const existingReverseEdge = edgesDataSet.get(reverseEdgeId);
+                    
+                    if (existingReverseEdge) {
+                        edgesDataSet.update({
+                            id: reverseEdgeId,
+                            color: { color: COMPLETED_ROUTE_COLOR },
+                            width: 3
+                        });
+                    }
+                }
+            }
+        }
+
+        function buildGraphFromInput() {
+            graphNodesJS = {};
+            nodesDataSet.clear();
+            edgesDataSet.clear();
+
+            const n_nodes = parseInt(nodesInputEl.value);
+            B_val_js = parseFloat(batteryInputEl.value);
+            const edgesStrLines = edgesInputEl.value.trim().split('\n');
+
+            for (let i = 0; i < n_nodes; i++) {
+                graphNodesJS[i] = {
+                    id: i,
+                    children: [],
+                    parentRef: null, 
+                    visited: false,
+                    dataForVis: { id: i, label: String(i) } 
+                };
+                nodesDataSet.add(graphNodesJS[i].dataForVis);
+            }
+
+            edgesStrLines.forEach((line, index) => {
+                const parts = line.trim().split(/\s+/);
+                if (parts.length === 3) {
+                    const u = parseInt(parts[0]);
+                    const v = parseInt(parts[1]);
+                    const w = parseFloat(parts[2]);
+
+                    if (graphNodesJS[u] && graphNodesJS[v]) {
+                        graphNodesJS[u].children.push({ nodeRef: graphNodesJS[v], weight: w });
+                        graphNodesJS[v].parentRef = graphNodesJS[u]; 
+                        
+                        edgesDataSet.add({
+                            id: `edge-${u}-${v}`, 
+                            from: u,
+                            to: v,
+                            label: String(w),
+                            arrows: 'to'
+                        });
+                    }
+                }
+            });
+            
+            if (!graphNodesJS[0] && n_nodes > 0) { 
+                graphNodesJS[0] = {
+                    id: 0, 
+                    children: [], 
+                    parentRef: null, 
+                    visited: false, 
+                    dataForVis: {id:0, label:'0'}
+                };
+                nodesDataSet.add(graphNodesJS[0].dataForVis);
+            }
+
+            if (network) network.destroy();
+            const data = { nodes: nodesDataSet, edges: edgesDataSet };
+            const options = {
+                layout: {
+                    hierarchical: {
+                        enabled: true,
+                        direction: "LR", // Left to Right
+                        sortMethod: 'directed',
+                        levelSeparation: 100,
+                        nodeSpacing: 120
+                    }
+                },
+                physics: { enabled: false },
+                interaction: {
+                    zoomView: false,
+                    dragView: false
+                },
+                nodes: { 
+                    shape: 'ellipse', 
+                    font: {size: 14}, 
+                    borderWidth: 2,
+                    fixed: {
+                        x: true,
+                        y: true
+                    }
+                },
+                edges: { 
+                    width: 2, 
+                    font: {align: 'middle', size:12},
+                    smooth: {
+                        type: 'cubicBezier',
+                        forceDirection: 'horizontal'
+                    }
+                }
+            };
+            network = new vis.Network(graphContainerEl, data, options);
+            resetHighlights();
+        }
+        
+        function initializeSimulationState() {
+            js_path_stack = [];
+            js_current_route_nodes = [];
+            js_routes_list = [];
+            js_current_path_length = 0.0;
+            js_current_route_energy = 0.0;
+            js_carried_surplus = 0.0;
+            js_full_dfs_trace = [];
+            stepCounter = 0;
+            stepByStepTableEl.innerHTML = '';
+
+            Object.values(graphNodesJS).forEach(node => node.visited = false);
+            updateCurrentMetricsDisplay();
+            updateResultsDisplay(); 
+        }
+
+        async function exploreWithSurplus_js(currentNode, availableSurplusRef) { 
+            if (!simulationInProgress) return;
+            
+            addStepToTable(
+                "Bắt đầu khám phá với năng lượng dư", 
+                currentNode.id, 
+                0, 
+                availableSurplusRef.value, 
+                js_current_route_nodes.join(' -> ')
+            );
+            
+            await highlightNode(currentNode.id, "gold", ANIMATION_DELAY_MS / 3); 
+
+            for (const childEdge of currentNode.children) {
+                if (!simulationInProgress) return;
+                const childNode = childEdge.nodeRef;
+                const weight = childEdge.weight;
+
+                if (!childNode.visited && (weight * 2) <= availableSurplusRef.value) {
+                    childNode.visited = true;
+                    js_current_route_nodes.push(childNode.id);
+                    js_full_dfs_trace.push(childNode.id);
+                    js_current_route_energy += (weight * 2);
+                    availableSurplusRef.value -= (weight * 2);
+
+                    addStepToTable(
+                        "Di chuyển đến nút con", 
+                        childNode.id, 
+                        weight * 2, 
+                        availableSurplusRef.value, 
+                        js_current_route_nodes.join(' -> ')
+                    );
+                    
+                    await highlightEdge(currentNode.id, childNode.id, weight, "orange", ANIMATION_DELAY_MS / 2);
+                    await highlightNode(childNode.id, "lightgoldenrodyellow", ANIMATION_DELAY_MS / 3);
+                    updateDfsDisplay(); updateCurrentMetricsDisplay(); updateResultsDisplay();
+
+                    await exploreWithSurplus_js(childNode, availableSurplusRef);
+                    if (!simulationInProgress) return;
+
+                    js_current_route_nodes.push(currentNode.id);
+                    js_full_dfs_trace.push(currentNode.id);
+                    
+                    addStepToTable(
+                        "Quay lại nút cha", 
+                        currentNode.id, 
+                        weight * 2, 
+                        availableSurplusRef.value, 
+                        js_current_route_nodes.join(' -> ')
+                    );
+                    
+                    await highlightEdge(childNode.id, currentNode.id, weight, "darkorange", ANIMATION_DELAY_MS / 2); 
+                    await highlightNode(currentNode.id, "gold", ANIMATION_DELAY_MS / 3);
+                    updateDfsDisplay(); updateCurrentMetricsDisplay(); updateResultsDisplay();
+                }
+            }
+            
+            addStepToTable(
+                "Kết thúc khám phá với năng lượng dư", 
+                currentNode.id, 
+                0, 
+                availableSurplusRef.value, 
+                js_current_route_nodes.join(' -> ')
+            );
+            
+            await highlightNode(currentNode.id, "#97C2FC", ANIMATION_DELAY_MS/3); 
+        }
+
+        async function DFS_js(u_node) {
+            if (!simulationInProgress) return;
+            
+            addStepToTable(
+                "Xử lý nút", 
+                u_node.id, 
+                0, 
+                B_val_js + js_carried_surplus - js_current_route_energy, 
+                js_current_route_nodes.join(' -> ')
+            );
+            
+            await highlightNode(u_node.id, "cornflowerblue");
+
+            for (const childEdge of u_node.children) {
+                if (!simulationInProgress) return;
+                const v_node = childEdge.nodeRef;
+                const w_edge = childEdge.weight;
+
+                if (!v_node.visited) {
+                    if (js_current_route_energy + w_edge + (js_current_path_length + w_edge) > B_val_js + js_carried_surplus) {
+                        let surplusBeforeNewRoute = { value: (B_val_js + js_carried_surplus) - (js_current_route_energy + js_current_path_length) };
+                        
+                        addStepToTable(
+                            "Kiểm tra năng lượng trước khi khám phá", 
+                            u_node.id, 
+                            0, 
+                            surplusBeforeNewRoute.value, 
+                            js_current_route_nodes.join(' -> ')
+                        );
+                        
+                        if (surplusBeforeNewRoute.value > 0) {
+                            await exploreWithSurplus_js(u_node, surplusBeforeNewRoute);
+                            if (!simulationInProgress) return;
+                        }
+
+                        js_current_route_energy += js_current_path_length; 
+
+                        let actualSurplusForCompletedRoute = (B_val_js + js_carried_surplus) - js_current_route_energy;
+                        js_carried_surplus = actualSurplusForCompletedRoute;
+
+                        let tempPathToRootNodes = [];
+                        for (let i = js_path_stack.length - 2; i >= 0; i--) {
+                            tempPathToRootNodes.push(js_path_stack[i].node.id);
+                        }
+                        const completedRoutePathNodes = [...js_current_route_nodes, ...tempPathToRootNodes];
+                        
+                        const newRoute = {
+                            pathNodesString: completedRoutePathNodes.join(" "),
+                            cost: js_current_route_energy,
+                            surplus: actualSurplusForCompletedRoute,
+                            pathNodesArray: completedRoutePathNodes
+                        };
+                        
+                        js_routes_list.push(newRoute);
+                        markRouteAsCompleted(newRoute);
+                        
+                        addStepToTable(
+                            "Hoàn thành tuyến đường", 
+                            u_node.id, 
+                            js_current_route_energy, 
+                            actualSurplusForCompletedRoute, 
+                            completedRoutePathNodes.join(' -> ')
+                        );
+                        
+                        updateResultsDisplay();
+                        await visualDelay(ANIMATION_DELAY_MS/2);
+
+                        js_current_route_nodes = [graphNodesJS[0].id]; 
+                        js_current_route_energy = 0.0;
+
+                        for (let i = 1; i < js_path_stack.length; i++) { 
+                            const pathNode = js_path_stack[i].node;
+                            const wtToPathNode = js_path_stack[i].weightToParent;
+                            js_current_route_energy += wtToPathNode;
+                            js_current_route_nodes.push(pathNode.id);
+                        }
+                        
+                        addStepToTable(
+                            "Bắt đầu tuyến đường mới", 
+                            u_node.id, 
+                            0, 
+                            B_val_js + js_carried_surplus - js_current_route_energy, 
+                            js_current_route_nodes.join(' -> ')
+                        );
+                        
+                        updateCurrentMetricsDisplay();
+                    }
+
+                    v_node.visited = true;
+                    js_full_dfs_trace.push(v_node.id);
+                    
+                    js_path_stack.push({ node: v_node, weightToParent: w_edge });
+                    js_current_path_length += w_edge;
+                    js_current_route_energy += w_edge;
+                    js_current_route_nodes.push(v_node.id);
+                    
+                    addStepToTable(
+                        "Di chuyển đến nút con", 
+                        v_node.id, 
+                        w_edge, 
+                        B_val_js + js_carried_surplus - js_current_route_energy, 
+                        js_current_route_nodes.join(' -> ')
+                    );
+
+                    await highlightEdge(u_node.id, v_node.id, w_edge, "crimson");
+                    updateDfsDisplay(); updateCurrentMetricsDisplay(); updateResultsDisplay();
+                    
+                    await DFS_js(v_node);
+                    if (!simulationInProgress) return;
+
+                    js_full_dfs_trace.push(u_node.id);
+                    js_path_stack.pop();
+                    js_current_path_length -= w_edge;
+                    js_current_route_energy += w_edge; 
+                    js_current_route_nodes.push(u_node.id);
+                    
+                    addStepToTable(
+                        "Quay lại nút cha", 
+                        u_node.id, 
+                        w_edge, 
+                        B_val_js + js_carried_surplus - js_current_route_energy, 
+                        js_current_route_nodes.join(' -> ')
+                    );
+
+                    await highlightEdge(v_node.id, u_node.id, w_edge, "darkslateblue"); 
+                    await highlightNode(v_node.id, '#E0E0E0'); 
+                    await highlightNode(u_node.id, "cornflowerblue"); 
+                    updateDfsDisplay(); updateCurrentMetricsDisplay(); updateResultsDisplay();
+                }
+            }
+        }
+
+        async function startFullSimulation() {
+            if (simulationInProgress) return;
+            simulationInProgress = true;
+            simulationPaused = false;
+            initBtn.disabled = true;
+            pauseBtn.disabled = false;
+            resetBtn.disabled = false; 
+            
+            buildGraphFromInput();
+            initializeSimulationState();
+            
+            const rootNode = graphNodesJS[0];
+            if (!rootNode) {
+                dfsOutputTextEl.textContent = "Lỗi: Nút gốc (ID 0) không tồn tại.";
+                simulationInProgress = false;
+                initBtn.disabled = false;
+                pauseBtn.disabled = true;
+                return;
+            }
+
+            try {
+                js_path_stack.push({ node: rootNode, weightToParent: 0.0 });
+                js_current_route_nodes.push(rootNode.id);
+                js_full_dfs_trace.push(rootNode.id);
+                rootNode.visited = true;
+                
+                addStepToTable(
+                    "Bắt đầu từ nút gốc", 
+                    rootNode.id, 
+                    0, 
+                    B_val_js, 
+                    rootNode.id.toString()
+                );
+                
+                updateDfsDisplay(); 
+                updateCurrentMetricsDisplay();
+
+                await DFS_js(rootNode);
+                if (!simulationInProgress) { 
+                    console.log("Simulation was reset during DFS.");
+                    return;
+                }
+
+                if (js_current_route_nodes.length > 0 && !(js_current_route_nodes.length === 1 && js_current_route_nodes[0] === rootNode.id && js_path_stack.length <=1)) {
+                    js_current_route_energy += js_current_path_length; 
+
+                    let finalSurplusRef = { value: (B_val_js + js_carried_surplus) - js_current_route_energy };
+                    
+                    addStepToTable(
+                        "Kiểm tra năng lượng cuối cùng", 
+                        rootNode.id, 
+                        0, 
+                        finalSurplusRef.value, 
+                        js_current_route_nodes.join(' -> ')
+                    );
+                    
+                    if (finalSurplusRef.value > 0) {
+                        const lastDFSNode = js_path_stack.length > 0 ? js_path_stack[js_path_stack.length-1].node : rootNode;
+                        await exploreWithSurplus_js(lastDFSNode, finalSurplusRef);
+                        if (!simulationInProgress) return;
+                    }
+                    
+                    let tempPathToRootNodes = [];
+                    for (let i = js_path_stack.length - 2; i >= 0; i--) {
+                        tempPathToRootNodes.push(js_path_stack[i].node.id);
+                    }
+                    const finalRoutePathNodes = [...js_current_route_nodes, ...tempPathToRootNodes];
+
+                    const finalRoute = {
+                        pathNodesString: finalRoutePathNodes.join(" "),
+                        cost: js_current_route_energy,
+                        surplus: finalSurplusRef.value, 
+                        pathNodesArray: finalRoutePathNodes
+                    };
+                    
+                    js_routes_list.push(finalRoute);
+                    markRouteAsCompleted(finalRoute);
+                    
+                    addStepToTable(
+                        "Hoàn thành tuyến đường cuối cùng", 
+                        rootNode.id, 
+                        js_current_route_energy, 
+                        finalSurplusRef.value, 
+                        finalRoutePathNodes.join(' -> ')
+                    );
+                }
+                
+                updateResultsDisplay();
+                currentMetricsTextEl.textContent += "\n--- HOÀN THÀNH MÔ PHỎNG ---";
+                addStepToTable("Kết thúc mô phỏng", "-", 0, B_val_js + js_carried_surplus - js_current_route_energy, "-");
+
+            } catch (error) {
+                if (error.message === "Simulation stopped.") {
+                    console.log("Simulation explicitly stopped via reset.");
+                } else {
+                    console.error("Lỗi trong quá trình mô phỏng:", error);
+                    currentMetricsTextEl.textContent += `\nLỖI: ${error.message}`;
+                    addStepToTable("Lỗi", "-", 0, 0, error.message);
+                }
+            } finally {
+                simulationInProgress = false;
+                simulationPaused = false;
+                initBtn.disabled = false;
+                pauseBtn.disabled = true;
+            }
+        }
+        
+        function togglePauseSimulation() {
+            if (!simulationInProgress) return;
+            
+            simulationPaused = !simulationPaused;
+            pauseBtn.textContent = simulationPaused ? "Tiếp tục" : "Tạm dừng";
+            
+            if (!simulationPaused && resumeSimulation) {
+                resumeSimulation();
+            }
+        }
+        
+        function resetAll() {
+            simulationInProgress = false; 
+            simulationPaused = false;
+            
+            initializeSimulationState(); 
+            buildGraphFromInput(); 
+            
+            currentMetricsTextEl.textContent = "Chưa có dữ liệu";
+            dfsOutputTextEl.textContent = "Chưa có dữ liệu";
+            routesOutputContainerEl.innerHTML = "Chưa có dữ liệu";
+            
+            initBtn.disabled = false;
+            pauseBtn.disabled = true;
+            resetBtn.disabled = false; 
+            pauseBtn.textContent = "Tạm dừng";
+            
+            console.log("Hệ thống đã được reset.");
+        }
+
+        initBtn.addEventListener('click', startFullSimulation);
+        pauseBtn.addEventListener('click', togglePauseSimulation);
+        resetBtn.addEventListener('click', resetAll);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            resetAll(); 
+        });
+    </script>
+</body>
+</html>
