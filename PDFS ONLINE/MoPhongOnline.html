@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mô Phỏng Thuật Toán Robot</title>
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #2196F3;
+            --danger-color: #f44336;
+            --warning-color: #FFC107;
+            --dark-color: #333;
+            --light-color: #f5f5f5;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--light-color);
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .app-container {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            max-width: 1400px;
+            margin: 0 auto;
+            gap: 20px;
+        }
+        
+        .panel {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h2, h3 {
+            margin-top: 0;
+            color: var(--dark-color);
+            padding-bottom: 10px;
+        }
+        
+        #grid-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        #grid {
+            display: grid;
+            gap: 3px;
+            margin: 15px 0;
+            background-color: #eee;
+            padding: 5px;
+            border-radius: 5px;
+        }
+        
+        .cell {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+            border-radius: 3px;
+        }
+        
+        .cell::after {
+            content: attr(data-distance);
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            font-size: 9px;
+            color: rgba(0,0,0,0.6);
+        }
+        
+        .empty {
+            background-color: white;
+        }
+        
+        .start {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .obstacle {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        
+        .visited {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        .current {
+            background-color: var(--warning-color);
+            color: black;
+            animation: pulse 1s infinite;
+        }
+        
+        .path {
+            background-color: #9C27B0;
+            color: white;
+        }
+        
+        .new-route {
+            animation: highlight 1.5s;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes highlight {
+            0% { background-color: #FFEB3B; box-shadow: 0 0 10px #FFEB3B; }
+            100% { background-color: var(--secondary-color); box-shadow: none; }
+        }
+        
+        #log-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        #log {
+            flex: 1;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            margin-bottom: 15px;
+            background-color: white;
+        }
+        
+        .log-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        
+        .log-table th {
+            position: sticky;
+            top: 0;
+            background-color: #f1f1f1;
+            z-index: 10;
+        }
+        
+        .log-table th, .log-table td {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        
+        .log-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        .log-table tr:hover {
+            background-color: #f1f1f1;
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+        }
+        
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+            font-family: monospace;
+        }
+        
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        
+        button {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.3s;
+        }
+        
+        button.primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        button.secondary {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        button.warning {
+            background-color: var(--warning-color);
+            color: black;
+        }
+        
+        button.danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        
+        button:hover {
+            opacity: 0.9;
+        }
+        
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        #route-visual {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f0f8ff;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .speed-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        #speedSlider {
+            flex-grow: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Cột trái - Khu vực mô phỏng -->
+        <div class="panel" id="simulation-panel">
+            <h2>Mô Phỏng</h2>
+            <div id="grid-container">
+                <div id="grid"></div>
+            </div>
+            <div id="route-visual">
+                <h4>Đường đi hiện tại:</h4>
+                <div id="current-route"></div>
+            </div>
+        </div>
+        
+        <!-- Cột giữa - Nhật ký hoạt động -->
+        <div class="panel" id="log-panel">
+            <h2>Nhật Ký Hoạt Động</h2>
+            <div id="log-container">
+                <div id="log">
+                    <table class="log-table">
+                        <thead>
+                            <tr>
+                                <th>Bước</th>
+                                <th>Hoạt động</th>
+                                <th>Vị trí</th>
+                                <th>Năng lượng</th>
+                                <th>Khoảng cách</th>
+                            </tr>
+                        </thead>
+                        <tbody id="log-body">
+                        </tbody>
+                    </table>
+                </div>
+                <div class="button-group">
+                    <button id="clear-log-btn" class="warning">Xóa Nhật Ký</button>
+                    <button id="export-log-btn" class="secondary">Xuất Nhật Ký</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Cột phải - Điều khiển -->
+        <div class="panel" id="control-panel">
+            <h2>Điều Khiển</h2>
+            <div class="control-group">
+                <h3>Cấu Hình Môi Trường</h3>
+                <label for="rows">Số hàng (n):</label>
+                <input type="number" id="rows" min="3" max="20" value="8">
+                
+                <label for="cols">Số cột (m):</label>
+                <input type="number" id="cols" min="3" max="20" value="8">
+                
+                <label for="energy">Năng lượng tối đa (E):</label>
+                <input type="number" id="energy" min="1" value="32">
+                
+                <label for="matrix-input">Ma trận (0=trống, 1=chướng ngại, 2=trạm sạc):</label>
+                <textarea id="matrix-input">0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0
+0 1 1 0 0 1 1 0
+0 1 1 0 0 1 1 0
+0 0 0 0 0 0 0 0
+0 1 1 0 0 1 1 0
+0 1 1 0 0 1 1 0
+2 0 0 0 0 0 0 0</textarea>
+                
+                <div class="button-group">
+                    <button id="init-btn" class="primary">Khởi Tạo</button>
+                    <button id="random-btn" class="secondary">Ngẫu Nhiên</button>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <h3>Điều Khiển Mô Phỏng</h3>
+                <div class="button-group">
+                    <button id="step-btn" class="primary" disabled>Từng Bước</button>
+                    <button id="run-btn" class="primary" disabled>Chạy Tự Động</button>
+                    <button id="pause-btn" class="warning" disabled>Tạm Dừng</button>
+                    <button id="reset-btn" class="danger">Reset</button>
+                </div>
+                
+                <div class="speed-control">
+                    <label for="speed-slider">Tốc độ:</label>
+                    <input type="range" id="speed-slider" min="100" max="2000" step="100" value="500">
+                    <span id="speed-value">500ms</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Biến toàn cục
+        let config = {
+            n: 8,
+            m: 8,
+            E: 32,
+            sx: 7,
+            sy: 0,
+            obstacles: []
+        };
+        
+        let grid = [], d = [], vis = [], par = [], paths = [];
+        let cnt = 0, curE = 0, px = -1, py = -1;
+        let newRoute = true;
+        let stL = [], stU = [], stR = [], stD = [];
+        let intervalId = null;
+        let currentStep = 0;
+        let simulationSpeed = 500;
+        let isRunning = false;
+        let isPaused = false;
+        const dx = [0, -1, 0, 1];
+        const dy = [-1, 0, 1, 0];
+        let currentNode = null;
+
+        // DOM Elements
+        const gridElement = document.getElementById('grid');
+        const logBody = document.getElementById('log-body');
+        const currentRouteElement = document.getElementById('current-route');
+        const speedSlider = document.getElementById('speed-slider');
+        const speedValue = document.getElementById('speed-value');
+
+        // Khởi tạo sự kiện
+        document.getElementById('init-btn').addEventListener('click', init);
+        document.getElementById('random-btn').addEventListener('click', generateRandomGrid);
+        document.getElementById('step-btn').addEventListener('click', runStep);
+        document.getElementById('run-btn').addEventListener('click', toggleRun);
+        document.getElementById('pause-btn').addEventListener('click', togglePause);
+        document.getElementById('reset-btn').addEventListener('click', reset);
+        document.getElementById('clear-log-btn').addEventListener('click', clearLog);
+        document.getElementById('export-log-btn').addEventListener('click', exportLog);
+        speedSlider.addEventListener('input', updateSpeed);
+
+        // Khởi tạo môi trường từ input
+        function initEnvironment() {
+            config.n = parseInt(document.getElementById('rows').value);
+            config.m = parseInt(document.getElementById('cols').value);
+            config.E = parseInt(document.getElementById('energy').value);
+            
+            const matrixInput = document.getElementById('matrix-input').value.trim();
+            const rows = matrixInput.split('\n');
+            
+            if (rows.length !== config.n) {
+                alert(`Số hàng không khớp (nhập ${rows.length}, khai báo ${config.n})`);
+                return false;
+            }
+            
+            grid = Array(config.n).fill().map(() => Array(config.m).fill(0));
+            config.obstacles = [];
+            config.sx = -1;
+            config.sy = -1;
+            
+            for (let i = 0; i < config.n; i++) {
+                const cols = rows[i].trim().split(/\s+/);
+                if (cols.length !== config.m) {
+                    alert(`Số cột không khớp ở hàng ${i+1}`);
+                    return false;
+                }
+                
+                for (let j = 0; j < config.m; j++) {
+                    grid[i][j] = parseInt(cols[j]);
+                    if (grid[i][j] === 1) {
+                        config.obstacles.push([i, j]);
+                    } else if (grid[i][j] === 2) {
+                        if (config.sx !== -1) {
+                            alert("Chỉ được có 1 trạm sạc (giá trị 2)");
+                            return false;
+                        }
+                        config.sx = i;
+                        config.sy = j;
+                    }
+                }
+            }
+            
+            if (config.sx === -1) {
+                alert("Không tìm thấy trạm sạc (cần giá trị 2 trong ma trận)");
+                return false;
+            }
+            
+            return true;
+        }
+
+        // Khởi tạo hệ thống
+        function init() {
+            if (!initEnvironment()) return;
+            
+            clearInterval(intervalId);
+            intervalId = null;
+            isRunning = false;
+            isPaused = false;
+            
+            d = Array(config.n).fill().map(() => Array(config.m).fill(0));
+            vis = Array(config.n).fill().map(() => Array(config.m).fill(false));
+            par = Array(config.n).fill().map(() => Array(config.m).fill(null));
+            paths = [[]];
+            
+            stL = [{x: config.sx, y: config.sy}];
+            stU = []; stR = []; stD = [];
+            
+            cnt = 0;
+            curE = 0;
+            px = -1; py = -1;
+            newRoute = true;
+            currentStep = 0;
+            currentNode = null;
+            
+            clearLog();
+            renderGrid();
+            logActivity("Hệ thống khởi tạo", config.sx, config.sy, 0, 0);
+            
+            document.getElementById('step-btn').disabled = false;
+            document.getElementById('run-btn').disabled = false;
+            document.getElementById('pause-btn').disabled = true;
+        }
+
+        // Tạo ma trận ngẫu nhiên
+        function generateRandomGrid() {
+            const rows = parseInt(document.getElementById('rows').value);
+            const cols = parseInt(document.getElementById('cols').value);
+            
+            let matrixText = '';
+            for (let i = 0; i < rows; i++) {
+                const row = [];
+                for (let j = 0; j < cols; j++) {
+                    // Đặt trạm sạc ở góc dưới trái
+                    if (i === rows-1 && j === 0) {
+                        row.push(2);
+                    } 
+                    // 20% ô là chướng ngại vật
+                    else if (Math.random() < 0.2) {
+                        row.push(1);
+                    } else {
+                        row.push(0);
+                    }
+                }
+                matrixText += row.join(' ') + '\n';
+            }
+            document.getElementById('matrix-input').value = matrixText.trim();
+        }
+
+        // Render grid
+        function renderGrid() {
+            gridElement.innerHTML = '';
+            gridElement.style.gridTemplateColumns = `repeat(${config.m}, 40px)`;
+            gridElement.style.gridTemplateRows = `repeat(${config.n}, 40px)`;
+            
+            for (let i = 0; i < config.n; i++) {
+                for (let j = 0; j < config.m; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell empty';
+                    cell.dataset.x = i;
+                    cell.dataset.y = j;
+                    cell.dataset.distance = d[i][j] || '';
+                    
+                    if (i === config.sx && j === config.sy) {
+                        cell.className = 'cell start';
+                        cell.textContent = 'S';
+                    } else if (grid[i][j] === 1) {
+                        cell.className = 'cell obstacle';
+                        cell.textContent = 'X';
+                    } else if (vis[i][j]) {
+                        cell.className = 'cell visited';
+                    }
+                    
+                    if (currentNode && i === currentNode.x && j === currentNode.y) {
+                        cell.classList.add('current');
+                    }
+                    
+                    // Đánh dấu đường đi
+                    if (paths.some(path => path.some(step => step.x === i && step.y === j))) {
+                        cell.classList.add('path');
+                    }
+                    
+                    gridElement.appendChild(cell);
+                }
+            }
+            
+            updateRouteVisual();
+        }
+
+        // Cập nhật hiển thị đường đi
+        function updateRouteVisual() {
+            if (paths[cnt] && paths[cnt].length > 0) {
+                const route = paths[cnt].map(step => `(${step.x},${step.y})`).join(' → ');
+                currentRouteElement.textContent = route;
+            } else {
+                currentRouteElement.textContent = "Chưa có đường đi";
+            }
+        }
+
+        // Ghi log hoạt động
+        function logActivity(action, x, y, energy, distance) {
+            const row = logBody.insertRow();
+            
+            row.insertCell(0).textContent = currentStep;
+            row.insertCell(1).textContent = action;
+            row.insertCell(2).textContent = `(${x},${y})`;
+            row.insertCell(3).textContent = energy;
+            row.insertCell(4).textContent = distance;
+            
+            logBody.parentElement.scrollTop = logBody.parentElement.scrollHeight;
+            currentStep++;
+        }
+
+        // Cập nhật khoảng cách
+        function upd(x, y, nx, ny) {
+            if (d[nx][ny] === 0) {
+                if (d[x][y] + 1 > config.E / 2) return;
+                d[nx][ny] = d[x][y] + 1;
+                par[nx][ny] = {x, y};
+            } else if (d[nx][ny] > d[x][y] + 1) {
+                d[nx][ny] = d[x][y] + 1;
+                par[nx][ny] = {x, y};
+            } else if (d[nx][ny] === d[x][y] + 1) {
+                par[nx][ny] = {x, y};
+            }
+        }
+
+        // Lưu tuyến đường
+        function save(x, y) {
+            paths[cnt] = [];
+            let current = {x, y};
+            let e = curE;
+            
+            paths[cnt].push({x: current.x, y: current.y, e, d: d[current.x][current.y]});
+            
+            while (current.x !== config.sx || current.y !== config.sy) {
+                e--;
+                current = par[current.x][current.y];
+                paths[cnt].push({x: current.x, y: current.y, e, d: d[current.x][current.y]});
+            }
+            
+            paths[cnt].reverse();
+            highlightNewRoute(cnt);
+        }
+
+        // Highlight tuyến đường mới
+        function highlightNewRoute(routeIdx) {
+            const route = paths[routeIdx];
+            route.forEach((step, idx) => {
+                const cell = document.querySelector(`.cell[data-x="${step.x}"][data-y="${step.y}"]`);
+                if (cell) {
+                    cell.classList.add('new-route');
+                    setTimeout(() => {
+                        cell.classList.remove('new-route');
+                    }, 1500);
+                }
+            });
+        }
+
+        // Xử lý di chuyển
+        function go(x, y) {
+            currentNode = {x, y};
+            
+            logActivity(
+                newRoute ? "Bắt đầu tuyến mới" : "Di chuyển",
+                x, y,
+                curE,
+                d[x][y]
+            );
+
+            if (!newRoute) {
+                curE = d[x][y];
+                newRoute = true;
+                save(x, y);
+                logActivity("Tạo tuyến mới", x, y, curE, d[x][y]);
+            } else {
+                const stepE = (px !== -1 && py !== -1) ? 
+                    Math.abs(d[px][py] - d[par[x][y].x][par[x][y].y]) + 1 : 1;
+                
+                if (x !== config.sx || y !== config.sy) {
+                    if (curE + stepE + d[x][y] === config.E) {
+                        curE += stepE;
+                        paths[cnt].push({x, y, e: curE, d: d[x][y]});
+                        newRoute = false;
+                        logActivity("Hoàn thành tuyến", x, y, curE, d[x][y]);
+                        cnt++;
+                        paths.push([]);
+                    } else if (curE + stepE + d[x][y] > config.E) {
+                        cnt++;
+                        save(x, y);
+                        curE = d[x][y];
+                        logActivity("Tuyến mới (vượt NL)", x, y, curE, d[x][y]);
+                        paths.push([]);
+                    } else {
+                        curE += stepE;
+                        paths[cnt].push({x, y, e: curE, d: d[x][y]});
+                    }
+                }
+            }
+
+            vis[x][y] = true;
+
+            // Thêm các ô lân cận vào stack
+            for (let k = 0; k < 4; k++) {
+                const nx = x + dx[k], ny = y + dy[k];
+                if (nx >= 0 && nx < config.n && ny >= 0 && ny < config.m && 
+                    grid[nx][ny] !== 1 && !vis[nx][ny]) {
+                    if (k === 0) stL.push({x: nx, y: ny});
+                    else if (k === 1) stU.push({x: nx, y: ny});
+                    else if (k === 2) stR.push({x: nx, y: ny});
+                    else if (k === 3) stD.push({x: nx, y: ny});
+                    upd(x, y, nx, ny);
+                    logActivity(`Thêm vào stack ${['Trái','Trên','Phải','Dưới'][k]}`, nx, ny, 0, 0);
+                }
+            }
+
+            px = x; py = y;
+            renderGrid();
+        }
+
+        // Chạy từng bước
+        function runStep() {
+            if (stL.length > 0) {
+                const t = stL.pop();
+                if (!vis[t.x][t.y]) return go(t.x, t.y);
+            }
+            if (stU.length > 0) {
+                const t = stU.pop();
+                if (!vis[t.x][t.y]) return go(t.x, t.y);
+            }
+            if (stR.length > 0) {
+                const t = stR.pop();
+                if (!vis[t.x][t.y]) return go(t.x, t.y);
+            }
+            if (stD.length > 0) {
+                const t = stD.pop();
+                if (!vis[t.x][t.y]) return go(t.x, t.y);
+            }
+            
+            logActivity("Thuật toán kết thúc", -1, -1, 0, 0);
+            stopSimulation();
+        }
+
+        // Bắt đầu/dừng mô phỏng tự động
+        function toggleRun() {
+            if (isRunning) {
+                stopSimulation();
+            } else {
+                startSimulation();
+            }
+        }
+
+        // Bắt đầu mô phỏng tự động
+        function startSimulation() {
+            if (isRunning) return;
+            
+            isRunning = true;
+            isPaused = false;
+            document.getElementById('run-btn').textContent = "Dừng";
+            document.getElementById('pause-btn').disabled = false;
+            document.getElementById('step-btn').disabled = true;
+            
+            intervalId = setInterval(() => {
+                if (!isPaused) {
+                    runStep();
+                    if (!isRunning) {
+                        clearInterval(intervalId);
+                    }
+                }
+            }, simulationSpeed);
+        }
+
+        // Dừng mô phỏng
+        function stopSimulation() {
+            isRunning = false;
+            clearInterval(intervalId);
+            intervalId = null;
+            document.getElementById('run-btn').textContent = "Chạy Tự Động";
+            document.getElementById('pause-btn').disabled = true;
+            document.getElementById('step-btn').disabled = false;
+        }
+
+        // Tạm dừng/tiếp tục mô phỏng
+        function togglePause() {
+            isPaused = !isPaused;
+            document.getElementById('pause-btn').textContent = isPaused ? "Tiếp Tục" : "Tạm Dừng";
+        }
+
+        // Reset hệ thống
+        function reset() {
+            stopSimulation();
+            init();
+        }
+
+        // Xóa nhật ký
+        function clearLog() {
+            logBody.innerHTML = '';
+            currentStep = 0;
+        }
+
+        // Xuất nhật ký
+        function exportLog() {
+            let logText = "Bước\tHoạt động\tVị trí\tNăng lượng\tKhoảng cách\n";
+            const rows = logBody.querySelectorAll('tr');
+            
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                logText += `${cells[0].textContent}\t${cells[1].textContent}\t${cells[2].textContent}\t${cells[3].textContent}\t${cells[4].textContent}\n`;
+            });
+            
+            const blob = new Blob([logText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `robot-simulation-log-${new Date().toISOString().slice(0,10)}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Cập nhật tốc độ mô phỏng
+        function updateSpeed() {
+            simulationSpeed = 2100 - speedSlider.value; // Đảo ngược giá trị (100-2000ms)
+            speedValue.textContent = `${simulationSpeed}ms`;
+            
+            if (isRunning && intervalId) {
+                clearInterval(intervalId);
+                intervalId = setInterval(() => {
+                    if (!isPaused) runStep();
+                }, simulationSpeed);
+            }
+        }
+
+        // Khởi tạo ban đầu
+        init();
+    </script>
+</body>
+</html>
