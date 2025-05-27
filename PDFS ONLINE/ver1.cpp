@@ -1,11 +1,5 @@
-#include <iostream>
-#include <vector>
-#include <stack>
-#include <utility>
-#include <algorithm>
-#include <cstring>
+#include <bits/stdc++.h>
 using namespace std;
-
 
 struct Step {
     int x, y, e, d;
@@ -34,7 +28,8 @@ void go(int x, int y);
 void run();
 
 int main() {
-
+    ios::sync_with_stdio(0);
+    cin.tie(0); cout.tie(0);
   //  auto start = std::chrono::high_resolution_clock::now(); // Bắt đầu đo thời gian
 
     freopen("T1.inp", "r", stdin);
