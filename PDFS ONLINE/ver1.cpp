@@ -36,7 +36,10 @@ int main() {
    // freopen("T4.out", "w", stdout);
     cin >> n >> m >> E;
     if (E % 2 != 0) E--; 
-    
+    if (E< 4*max(n,m)){
+        cout<< "E must be at least 4 times the maximum of n and m." << endl;
+        return 0;
+    }
     for (int i = 0; i < n; i++)
         for (int j = 0; j < m; j++) {
             cin >> a[i][j];
