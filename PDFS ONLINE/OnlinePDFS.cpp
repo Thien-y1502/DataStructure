@@ -147,6 +147,7 @@ void go(int x, int y) {
 
 
 void run() {
+    // Ưu tiên duyệt theo thứ tự Trái, Trên, Phải, Dưới (Tây, Bắc, Đông, Nam)
     while (!stL.empty() || !stU.empty() || !stR.empty() || !stD.empty()) {
         pair<int, int> t;
         if (!stL.empty()) { t = stL.top(); stL.pop(); }
