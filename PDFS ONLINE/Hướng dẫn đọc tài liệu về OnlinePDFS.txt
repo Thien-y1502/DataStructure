@@ -1,0 +1,13 @@
+Thông tin về các file 
+Comparison between OnlinePDFS and OnlineCPP.xlsx : file kết quả so sánh với kết quả bài báo 
+MoPhongOnline.html : mô phỏng trực quan thuật toán
+OnlinePDFS.cpp : file code thuật toán OnlinePDFS
+Ti.inp : file dữ liệu đầu vào thứ i
+Ti.out : file kết quả sau khi nhận dữ liệu từ file Ti.inp
+grid_editor.py : file code cho phép nhập môi trường
+grid_matrix.txt : file văn bản chứa dữ liệu sau khi chạy file grid_editor.py 
+ver1_sub.txt: mã giả thuật toán OnlinePDFS
+
+Thứ tự chạy code 
++ Chạy file grid_editor.py
++ chạy file OnlinePDFS.cpp
