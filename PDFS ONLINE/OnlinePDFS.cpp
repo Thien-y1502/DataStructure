@@ -32,9 +32,14 @@ int main() {
     cin.tie(nullptr);
     cout.tie(nullptr);
     auto start = std::chrono::high_resolution_clock::now(); // Bắt đầu đo thời gian
-   
-    freopen("T4.inp", "r", stdin);
-    freopen("T4.out", "w", stdout);
+    // Nếu muốn nhận dự liệu đầu vào từ grid_matrix.txt
+    //Kết quả xuất ra màn hình
+    freopen("grid_matrix.txt", "r", stdin);
+
+    //Nếu muốn nhận dự liệu đầu vào từ các file Ti.inp
+    //Kết quả được xuất ra file Ti.out tương ứng
+   // freopen("T4.inp", "r", stdin);
+   // freopen("T4.out", "w", stdout);
     cin >> n >> m >> E;
     if (E % 2 != 0) E--; 
     if (E< 4*max(n,m)){
