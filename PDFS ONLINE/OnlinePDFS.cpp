@@ -65,6 +65,7 @@ int main() {
 }
 
 void printD() {
+
     cout<<"Number of routes: " << cnt + 1 << endl;
 
     for (int i = 0; i <= cnt; i++) {
@@ -79,6 +80,22 @@ void printD() {
         total_steps += it.e + it.d;
     }
     cout<<"Total steps: " << total_steps << endl;
+    
+    bool allReachable = true;
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < m; j++) {
+            if (i != sx || j != sy) 
+            if (!d[i][j] && a[i][j] != 1) {
+                cout<<"Cannot reach cell (" << i << "," << j << ")"<<endl;
+                allReachable = false;
+            }
+        }
+    }
+    if (allReachable) {
+        cout << "All cells are reachable." << endl;
+    } else {
+        cout << "Some cells are not reachable." << endl;
+    }
 }
 
 void save(int x, int y) {
